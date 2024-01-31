@@ -14,6 +14,11 @@ use serde_json::Value;
 use serde::{Deserialize, de::DeserializeOwned};
 use std::fs;
 
+
+mod abi_decoder;
+
+use abi_decoder::read_abi;
+
 #[derive(Deserialize)]
 struct Config {
     provider_url: String,
@@ -25,6 +30,7 @@ struct Config {
 async fn main() -> Result<()> {
 
     let config: Config = read_toml_config("config.toml")?;
+    read_abi("./erc20_abi.json")?;
 
     let provider = Provider::<Http>::try_from(config.provider_url.as_str())?;
 
@@ -78,3 +84,4 @@ fn read_toml_config<T: DeserializeOwned>(path: &str) -> Result<T> {
     let config = toml::from_str(&contents)?;
     Ok(config)
 }
+
