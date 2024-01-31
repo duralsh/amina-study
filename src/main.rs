@@ -10,10 +10,24 @@ use std::convert::TryFrom;
 use std::sync::Arc;
 use serde_json::Value;
 
+
+use serde::{Deserialize, de::DeserializeOwned};
+use std::fs;
+
+#[derive(Deserialize)]
+struct Config {
+    provider_url: String,
+    private_key: String,
+}
+
+
 #[tokio::main]
 async fn main() -> Result<()> {
 
-    let provider = Provider::<Http>::try_from("")?;
+    let config: Config = read_toml_config("config.toml")?;
+
+    let provider = Provider::<Http>::try_from(config.provider_url.as_str())?;
+
 
     let chain_id = provider.get_chainid().await?;
 
@@ -23,10 +37,10 @@ async fn main() -> Result<()> {
 
     let to_address = "0xF1B792820b52e6503208CAb98ec0B7b89ac64D6A".parse::<Address>()?;
 
-   
-    let wallet: LocalWallet = ""
-        .parse::<LocalWallet>()?
-        .with_chain_id(chain_id.as_u64());
+
+    let wallet: LocalWallet = config.private_key
+    .parse::<LocalWallet>()?
+    .with_chain_id(chain_id.as_u64());
 
     let signer = Arc::new(SignerMiddleware::new(provider, wallet.with_chain_id(chain_id.as_u64())));
     let contract = ERC20Contract::new(contract_address, signer);
@@ -35,6 +49,8 @@ async fn main() -> Result<()> {
     let decimals = contract.decimals().call().await?;
     let decimal_amount = U256::from(whole_amount) * U256::exp10(decimals as usize);
     print!("Decimal Amount: {}", decimals);
+
+    println!("config: {} {}", config.private_key, config.provider_url);
     let tx = contract.transfer(to_address, decimal_amount);
     let pending_tx = tx.send().await?;
     let _mined_tx = pending_tx.await?;
@@ -51,4 +67,10 @@ async fn main() -> Result<()> {
     }
 
    Ok(())
+}
+
+fn read_toml_config<T: DeserializeOwned>(path: &str) -> Result<T> {
+    let contents = fs::read_to_string(path)?;
+    let config = toml::from_str(&contents)?;
+    Ok(config)
 }
