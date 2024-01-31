@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
 
     let chain_id = provider.get_chainid().await?;
 
-    let contract_address = "0x779877A7B0D9E8603169DdbD7836e478b4624789".parse::<Address>()?;
+    let contract_address = "0x0f8A8F7451c3C195C5eA253DE7Eb6E72532d276d".parse::<Address>()?;
 
     abigen!(ERC20Contract, "./erc20_abi.json",);
 
@@ -45,13 +45,13 @@ async fn main() -> Result<()> {
     let signer = Arc::new(SignerMiddleware::new(provider, wallet.with_chain_id(chain_id.as_u64())));
     let contract = ERC20Contract::new(contract_address, signer);
 
-    let whole_amount: u64 = 1;
+    let whole_amount: u64 = 100;
     let decimals = contract.decimals().call().await?;
     let decimal_amount = U256::from(whole_amount) * U256::exp10(decimals as usize);
-    print!("Decimal Amount: {}", decimals);
+    println!("Decimal Amount: {}", decimals);
 
     println!("config: {} {}", config.private_key, config.provider_url);
-    let tx = contract.transfer(to_address, decimal_amount);
+    let tx = contract.mint(to_address, decimal_amount);
     let pending_tx = tx.send().await?;
     let _mined_tx = pending_tx.await?;
 
