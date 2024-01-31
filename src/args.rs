@@ -17,6 +17,13 @@ pub enum Commands {
         #[clap(value_parser)]
         amount: u128,
     },
+    /// Transfer tokens to an address
+    Transfer {
+        #[clap(value_parser)]
+        to: Address,
+        #[clap(value_parser)]
+        amount: u128,
+    },
     /// Get the balance of an address
     BalanceOf {
         #[clap(value_parser)]
