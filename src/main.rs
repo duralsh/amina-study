@@ -1,76 +1,54 @@
-use alloy_json_abi::Function;
-use alloy_primitives::{Address, U256};
-use ethers_core::types::{
-    transaction::eip2718::TypedTransaction, Eip1559TransactionRequest, NameOrAddress,
-    TransactionRequest,
+use ethers::{
+    middleware::SignerMiddleware,
+    providers::{Http, Middleware, Provider},
+    signers::{LocalWallet, Signer},
+    types::{Address, U256},
+    contract::abigen
 };
-use ethers::providers::{Http, Provider,Middleware};
-
-use eyre::{eyre, Result};
-use foundry_common::types::{ToAlloy, ToEthers};
+use eyre::Result;
+use std::convert::TryFrom;
+use std::sync::Arc;
+use serde_json::Value;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let provider = Provider::<Http>::try_from("http://localhost:8545")?;
 
-  
-    let from = "your-from-address"; 
-    let to = Some("your-to-address"); 
-    let chain_id = 1; 
+    let provider = Provider::<Http>::try_from("")?;
 
-    let tx_builder = TxBuilder::new(&provider, from, to, chain_id).await?;
+    let chain_id = provider.get_chainid().await?;
 
+    let contract_address = "0x779877A7B0D9E8603169DdbD7836e478b4624789".parse::<Address>()?;
 
+    abigen!(ERC20Contract, "./erc20_abi.json",);
 
-    Ok(())
-}
+    let to_address = "0xF1B792820b52e6503208CAb98ec0B7b89ac64D6A".parse::<Address>()?;
 
+   
+    let wallet: LocalWallet = ""
+        .parse::<LocalWallet>()?
+        .with_chain_id(chain_id.as_u64());
 
+    let signer = Arc::new(SignerMiddleware::new(provider, wallet.with_chain_id(chain_id.as_u64())));
+    let contract = ERC20Contract::new(contract_address, signer);
 
-pub struct TxBuilder<'a, M: Middleware> {
-    to: Option<Address>,
-    chain: u32,
-    tx: TypedTransaction,
-    func: Option<Function>,
-    etherscan_api_key: Option<String>,
-    provider: &'a M,
-}
+    let whole_amount: u64 = 1;
+    let decimals = contract.decimals().call().await?;
+    let decimal_amount = U256::from(whole_amount) * U256::exp10(decimals as usize);
+    print!("Decimal Amount: {}", decimals);
+    let tx = contract.transfer(to_address, decimal_amount);
+    let pending_tx = tx.send().await?;
+    let _mined_tx = pending_tx.await?;
 
-impl<'a, M: Middleware> TxBuilder<'a, M> {
+    println!("Transaction Receipt: {}", serde_json::to_string(&_mined_tx)?);
 
-    async fn new<F: Into<NameOrAddress>, T: Into<NameOrAddress>>(
-        provider: &'a M,
-        from: F,
-        to: Option<T>,
-        chain: u32,
-    ) -> Result<TxBuilder<'a, M>> {
+    let json_str = serde_json::to_string(&_mined_tx)?;
+    let json: Value = serde_json::from_str(&json_str)?;
 
-        let from_addr = resolve_ens(provider, from).await?;
-
-
-        let mut tx: TypedTransaction = 
-            Eip1559TransactionRequest::new().from(from_addr.to_ethers()).chain_id(chain).into();
-            
-        let to_addr = if let Some(to) = to {
-            let addr = resolve_ens(provider, to).await?;
-            tx.set_to(addr.to_ethers());
-            Some(addr)
-        } else {
-            None
-        };
-        
-        Ok(Self { to: to_addr, chain, tx, func: None, etherscan_api_key: None, provider })
+    if let Some(transaction_hash) = json["transactionHash"].as_str() {
+        println!("\n URL: https://sepolia.etherscan.io/tx/{}", transaction_hash);
+    } else {
+        println!("Transaction Hash not found");
     }
-}
 
-async fn resolve_ens<M: Middleware, T: Into<NameOrAddress>>(
-    provider: &M,
-    addr: T,
-) -> Result<Address> {
-    let from_addr = match addr.into() {
-        NameOrAddress::Name(ref ens_name) => provider.resolve_name(ens_name).await,
-        NameOrAddress::Address(addr) => Ok(addr),
-    }
-    .map_err(|x| eyre!("Failed to resolve ENS name: {x}"))?;
-    Ok(from_addr.to_alloy())
+   Ok(())
 }
