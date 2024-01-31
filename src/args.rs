@@ -15,7 +15,7 @@ pub enum Commands {
         #[clap(value_parser)]
         to: Address,
         #[clap(value_parser)]
-        amount: U256,
+        amount: u128,
     },
     /// Get the balance of an address
     BalanceOf {
@@ -25,9 +25,28 @@ pub enum Commands {
     /// Get the decimals of the token
     Decimals {
     },
-    
-    ABI {
+    /// Get the Owner of the token
+    Owner {
        
-    }
+    }, 
+    /// Get the Total Supply of the token
+    TotalSupply {
+       
+    }, 
+    /// Get the Max Supply of the token
+    MaxSupply {
+       
+    },
+    /// Get the Transfer Tax Percent of the token
+    TaxPercent {
+       
+    },
+    /// Get the ABI of the token
+    Abi {
+       
+    },
+       
+
+
 }
 
