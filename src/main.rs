@@ -16,17 +16,15 @@ mod config;
 mod abi_decoder;
 
 use abi_decoder::read_abi;
-use config::{Config, read_toml_config};
-
+use config::Config;
 
 #[tokio::main]
 async fn main() -> Result<()> {
 
-    let config: Config = read_toml_config("config.toml")?;
+    let config = Config::new("config.toml")?;
     read_abi("./erc20_abi.json")?;
 
-    let provider = Provider::<Http>::try_from(config.provider_url.as_str())?;
-
+    let provider = Provider::<Http>::try_from(config.provider_url())?;
 
     let chain_id = provider.get_chainid().await?;
 
@@ -36,10 +34,7 @@ async fn main() -> Result<()> {
 
     let to_address = "0xF1B792820b52e6503208CAb98ec0B7b89ac64D6A".parse::<Address>()?;
 
-
-    let wallet: LocalWallet = config.private_key
-    .parse::<LocalWallet>()?
-    .with_chain_id(chain_id.as_u64());
+    let wallet: LocalWallet = config.private_key().parse::<LocalWallet>()?.with_chain_id(chain_id.as_u64());
 
     let signer = Arc::new(SignerMiddleware::new(provider, wallet.with_chain_id(chain_id.as_u64())));
     let contract = ERC20Contract::new(contract_address, signer);
