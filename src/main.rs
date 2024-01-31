@@ -4,28 +4,23 @@ use ethers_core::types::{
     transaction::eip2718::TypedTransaction, Eip1559TransactionRequest, NameOrAddress,
     TransactionRequest,
 };
-use ethers_providers::Middleware;
+use ethers::providers::{Http, Provider,Middleware};
+
 use eyre::{eyre, Result};
 use foundry_common::types::{ToAlloy, ToEthers};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Define the Ethereum node RPC URL
-    // let rpc_url = "http://localhost:8545"; // Replace with your Ethereum node RPC URL
+    let provider = Provider::<Http>::try_from("http://localhost:8545")?;
 
-    // // Create a provider
-    // let provider = Provider::<Http>::try_from(rpc_url)?;
+  
+    let from = "your-from-address"; 
+    let to = Some("your-to-address"); 
+    let chain_id = 1; 
 
-    // // Define transaction parameters
-    // let from_address = "your-from-address"; // Replace with your from address
-    // let to_address = Some("your-to-address"); // Replace with your to address or None
-    // let chain_id = 1; // Replace with your chain ID
-    // let legacy = false; // Set to true if you want to use legacy transactions
+    let tx_builder = TxBuilder::new(&provider, from, to, chain_id).await?;
 
-    // // Create a TxBuilder instance
-    // let tx_builder = TxBuilder::new(&provider, from_address, to_address, chain_id, legacy).await?;
 
-    // // Additional logic to use tx_builder...
 
     Ok(())
 }
@@ -48,7 +43,6 @@ impl<'a, M: Middleware> TxBuilder<'a, M> {
         from: F,
         to: Option<T>,
         chain: u32,
-        legacy: bool,
     ) -> Result<TxBuilder<'a, M>> {
 
         let from_addr = resolve_ens(provider, from).await?;
