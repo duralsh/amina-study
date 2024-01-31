@@ -11,19 +11,12 @@ use std::sync::Arc;
 use serde_json::Value;
 
 
-use serde::{Deserialize, de::DeserializeOwned};
-use std::fs;
 
-
+mod config;
 mod abi_decoder;
 
 use abi_decoder::read_abi;
-
-#[derive(Deserialize)]
-struct Config {
-    provider_url: String,
-    private_key: String,
-}
+use config::{Config, read_toml_config};
 
 
 #[tokio::main]
@@ -51,7 +44,7 @@ async fn main() -> Result<()> {
     let signer = Arc::new(SignerMiddleware::new(provider, wallet.with_chain_id(chain_id.as_u64())));
     let contract = ERC20Contract::new(contract_address, signer);
 
-    let whole_amount: u64 = 100;
+    let whole_amount: u64 = 10;
     let decimals = contract.decimals().call().await?;
     let decimal_amount = U256::from(whole_amount) * U256::exp10(decimals as usize);
     println!("Decimal Amount: {}", decimals);
@@ -79,9 +72,4 @@ async fn main() -> Result<()> {
    Ok(())
 }
 
-fn read_toml_config<T: DeserializeOwned>(path: &str) -> Result<T> {
-    let contents = fs::read_to_string(path)?;
-    let config = toml::from_str(&contents)?;
-    Ok(config)
-}
 
