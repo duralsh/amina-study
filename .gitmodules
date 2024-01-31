@@ -1,0 +1,3 @@
+[submodule "amina-contracts"]
+	path = amina-contracts
+	url = git@github.com:partychad/amina-token.git
