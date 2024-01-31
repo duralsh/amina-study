@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
 
     let chain_id = provider.get_chainid().await?;
 
-    let contract_address = "0x0f8A8F7451c3C195C5eA253DE7Eb6E72532d276d".parse::<Address>()?;
+    let contract_address = "0xdcB6669062b47f6cC3DB7A70EAa8FcA3d1D16DfC".parse::<Address>()?;
 
     abigen!(ERC20Contract, "./erc20_abi.json",);
 
