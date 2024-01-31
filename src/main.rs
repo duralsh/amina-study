@@ -8,6 +8,7 @@ mod app_context;
 mod args;
 mod config;
 
+use config::Config; 
 use crate::args::Cli;
 use crate::args::Commands;
 use abi_decoder::read_abi;
@@ -23,6 +24,19 @@ async fn main() -> Result<()> {
         Commands::Mint { to, amount } => {
             println!("Minting {} tokens to {}", amount, to);
             let tx = context.contract.mint(to, amount.into());
+            let pending_tx = tx.send().await?;
+            let _mined_tx = pending_tx.await?;
+
+            println!(
+                "Transaction Receipt: {}",
+                serde_json::to_string(&_mined_tx)?
+            );
+        }
+        Commands::Transfer { to, amount } => {
+            let config = Config::new("config.toml")?;
+
+            println!("Transferring {} tokens to {} from {} ", amount, to, config.public_key());
+            let tx = context.contract.transfer(to, amount.into());
             let pending_tx = tx.send().await?;
             let _mined_tx = pending_tx.await?;
 
