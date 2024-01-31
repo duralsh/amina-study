@@ -50,7 +50,9 @@ async fn main() -> Result<()> {
     let decimal_amount = U256::from(whole_amount) * U256::exp10(decimals as usize);
     println!("Decimal Amount: {}", decimals);
 
-    println!("config: {} {}", config.private_key, config.provider_url);
+    let balance = contract.balance_of(to_address).call().await?;
+    println!("Balance: {}", balance);
+
     let tx = contract.mint(to_address, decimal_amount);
     let pending_tx = tx.send().await?;
     let _mined_tx = pending_tx.await?;
@@ -65,6 +67,8 @@ async fn main() -> Result<()> {
     } else {
         println!("Transaction Hash not found");
     }
+    let balance = contract.balance_of(to_address).call().await?;
+    println!("Balance: {}", balance);
 
    Ok(())
 }
