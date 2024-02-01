@@ -1,14 +1,12 @@
-use eyre::Result;
-
 mod abi_decoder;
 mod app_context;
 mod args;
 mod config;
 mod tx_recorder;
 
+use eyre::Result;
 use crate::args::Cli;
 use crate::args::Commands;
-use abi_decoder::read_abi;
 use app_context::AppContext;
 use clap::Parser;
 use config::Config;
@@ -60,7 +58,7 @@ async fn main() -> Result<()> {
             println!("Decimals: {}", decimals);
         }
         Commands::Abi {} => {
-            read_abi("./erc20_abi.json")?;
+            abi_decoder::read_abi("./erc20_abi.json")?;
         }
         Commands::TaxPercent {} => {
             let tax = context.contract.tax_percentage().call().await?;
