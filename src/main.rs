@@ -4,26 +4,29 @@ mod abi_decoder;
 mod app_context;
 mod args;
 mod config;
+mod tx_recorder;
 
-use config::Config; 
 use crate::args::Cli;
 use crate::args::Commands;
 use abi_decoder::read_abi;
 use app_context::AppContext;
 use clap::Parser;
+use config::Config;
+use tx_recorder::TxRecorder;
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
     let context =
         AppContext::new("config.toml", "0xdcB6669062b47f6cC3DB7A70EAa8FcA3d1D16DfC").await?;
-
+    let recorder = TxRecorder::new("txs.txt");
     match cli.command {
         Commands::Mint { to, amount } => {
             println!("Minting {} tokens to {}", amount, to);
             let tx = context.contract.mint(to, amount.into());
             let pending_tx = tx.send().await?;
             let _mined_tx = pending_tx.await?;
-
+            recorder.append_to_file(&serde_json::to_string(&_mined_tx)?)?;
             println!(
                 "Transaction Receipt: {}",
                 serde_json::to_string(&_mined_tx)?
@@ -32,10 +35,16 @@ async fn main() -> Result<()> {
         Commands::Transfer { to, amount } => {
             let config = Config::new("config.toml")?;
 
-            println!("Transferring {} tokens to {} from {} ", amount, to, config.public_key());
+            println!(
+                "Transferring {} tokens to {} from {} ",
+                amount,
+                to,
+                config.public_key()
+            );
             let tx = context.contract.transfer(to, amount.into());
             let pending_tx = tx.send().await?;
             let _mined_tx = pending_tx.await?;
+            recorder.append_to_file(&serde_json::to_string(&_mined_tx)?)?;
 
             println!(
                 "Transaction Receipt: {}",
@@ -72,4 +81,3 @@ async fn main() -> Result<()> {
     }
     Ok(())
 }
-
