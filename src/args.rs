@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use ethers::types::{Address, U256};
+use ethers::types::{Address};
 
 #[derive(Parser)]
 #[clap(name = "AMINA CLI", about = "A CLI tool for interacting with an ERC20 contract", version = "1.0")]
